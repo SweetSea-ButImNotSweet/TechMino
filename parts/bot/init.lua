@@ -49,7 +49,7 @@ local botMeta={__index=_undefMethod}
 
 local BOT={}
 
-local AISpeed={60,50,42,34,27,21,16,12,9,6}
+local AISpeed={60,50,42,34,27,21,1,1,1,1}
 --[[
     arg={
         next: number of nexts

@@ -34,11 +34,11 @@ return {
     getRank=function(P)
         local G=P.modeData.rankPts
         return
-        G>=23 and 5 or
-        G>=21 and 4 or
-        G>=19 and 3 or
-        G>=15 and 2 or
-        G>=11 and 1 or
-        G>=7 and 0
+        G>=11 and 5 or
+        G>=9 and 4 or
+        G>=7 and 3 or
+        G>=5 and 2 or
+        G>=4 and 1 or
+        G>=3 and 0
     end,
 }

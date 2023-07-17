@@ -476,7 +476,7 @@ do-- Mod data
         },
         {no=19,id="CS",name="customSeq",
             key="b",x=680,y=470,color='lB',
-            list={'bag','bagES','his','hisPool','c2','bagP1inf','rnd','mess','reverb'},
+            list={'bag','bagES','his','hisPool','c2','rnd','mess','reverb','bagP1inf'},
             func=function(P,O) P.gameEnv.sequence=O end,
             unranked=true,
         },
@@ -620,7 +620,7 @@ do-- Userdata tables
         sysCursor=true,
         maxFPS=60,
         frameMul=100,
-        locale='zh',
+        locale='en',
         skinSet='crystal_scf',
         skin={
             1,7,11,3,14,4,9,

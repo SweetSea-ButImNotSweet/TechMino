@@ -303,7 +303,7 @@ local levels={
     function() timing=false return "Coming S∞n"..(rnd()<.5 and "" or " "),1e99 end,
 }setmetatable(levels,{__index=function(self,k) return self[k-1] end})
 
-local level
+levelARM=1
 
 local input,inputTime="",0
 local question,answer
@@ -331,18 +331,19 @@ local function reset()
     drawing=false
     drawLines,drawVel,indexes={},{},{}
     inputTime=0
-    level=1
-    question,answer,autoDraw=newQuestion(1)
+    --levelARM=1
+    question,answer,autoDraw=newQuestion(levelARM)
 end
 
 local function check(val)
     if val==answer then
-        level=level+1
+        levelARM=levelARM+1
+		SCN.back()
         input=""
         inputTime=0
         local newQ
         repeat
-            newQ,answer,autoDraw=newQuestion(level)
+            newQ,answer,autoDraw=newQuestion(levelARM)
         until newQ~=question
         question=newQ
         SFX.play('reach')
@@ -425,7 +426,7 @@ function scene.keyDown(key,isRep)
         rem(drawVel)
     elseif key=='escape' then
         if tryBack() then
-            SCN.back()
+            MES.new('warn',"Cheater.")
         end
     end
 end
@@ -494,7 +495,7 @@ function scene.draw()
         GC.mStr(STRING.time(time),1026,70)
 
         FONT.set(35)
-        GC.mStr("["..level.."]",640,30)
+        GC.mStr("["..levelARM.."]",640,30)
 
         FONT.set(80)
         GC.mStr(question,640,60)
@@ -523,7 +524,7 @@ end
 
 scene.widgetList={
     -- TODO: Icons for "Toggle Drawing Mode" button and auto-draw button (waiting for C29H25N3O5 to make the icons in the font)
-    WIDGET.newButton{name='reset',x=155,y=100,w=180,h=100,color='lG',font=50,fText=CHAR.icon.retry_spin,code=pressKey'r',hideF=isDrawing},
+    --WIDGET.newButton{name='reset',x=155,y=100,w=180,h=100,color='lG',font=50,fText=CHAR.icon.retry_spin,code=pressKey'r',hideF=isDrawing},
     WIDGET.newKey{name='X',      x=540, y=620,w=90,font=60,fText=CHAR.key.clear,code=pressKey'backspace',hideF=isDrawing},
     WIDGET.newKey{name='0',      x=640, y=620,w=90,font=60,fText="0",code=pressKey'0',hideF=isDrawing},
     WIDGET.newKey{name='-',      x=740, y=620,w=90,font=60,fText="-",code=pressKey'-',hideF=isDrawing},
@@ -542,7 +543,7 @@ scene.widgetList={
     WIDGET.newKey{name='X_d',    x=1040,y=80 ,w=80,font=50,fText=CHAR.key.clear,code=pressKey'backspace',hideF=isntDrawing},
     WIDGET.newKey{name='undo',   x=960, y=80, w=80,font=50,fText=CHAR.icon.retry_spin,code=pressKey'ctrl_z',hideF=isntDrawing},
     WIDGET.newKey{name='help',   x=880, y=80, w=80,font=50,fText='?',code=pressKey'f1',hideF=isntDrawing},
-    WIDGET.newButton{name='back',x=1200,y=660,w=110,h=60,font=45,sound='back',fText=CHAR.icon.back,code=backScene,hideF=isDrawing},
+    --WIDGET.newButton{name='back',x=1200,y=660,w=110,h=60,font=45,sound='back',fText=CHAR.icon.back,code=backScene,hideF=isDrawing},
 }
 
 return scene

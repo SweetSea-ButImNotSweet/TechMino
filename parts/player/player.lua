@@ -613,10 +613,7 @@ do-- function Player:dropPosition(x,y,size)
             vy=vy+.0626
             self:setPosition(x,y,size)
             if y>2600 then
-                local index=TABLE.find(PLAYERS,self)
-                if index then
-                    table.remove(PLAYERS,index)
-                end
+                --table.remove(PLAYERS,TABLE.find(PLAYERS,self))
                 return true
             end
         end

@@ -40,7 +40,7 @@ local function generateGuide(num)
         F[i] = {}
         local h=getOpenHole(i)
         for j=1,10 do
-            F[i][j]=h==j and -1 or 21
+            F[i][j]=h==j and 21 or -1
         end
     end
 end
@@ -78,12 +78,15 @@ return {
             local h=getOpenHole(i)
             local flag
             for j=1,10 do
-                if P.field[i][j]>0 and h==j then flag=true break end-- goto post_pts_calc
-                if P.field[i][j]==0 and h~=j then flag=true break end-- goto post_pts_calc
+                if P.field[i][j]==0 and h==j then flag=true break end-- goto post_pts_calc
+                if P.field[i][j]>0 and h~=j then flag=true break end-- goto post_pts_calc
             end
             if flag then break end
-            if i==#P.field then break end-- goto post_pts_calc
-            if P.field[i+1][h]==0 then break end-- goto post_pts_calc
+            if i==#P.field then
+				D.rankPts=D.rankPts+1
+				break
+			end
+			if P.field[i+1][h]~=0 then break end
             D.rankPts=D.rankPts+1
         end
         -- ::post_pts_calc::

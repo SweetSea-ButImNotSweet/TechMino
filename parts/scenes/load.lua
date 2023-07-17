@@ -125,7 +125,7 @@ function scene.mouseDown()
     if LOADED then
         if FIRSTLAUNCH then
             SCN.push('main')
-            SCN.go('lang')
+            SCN.go('wtf')
         else
             SCN.go(SETTING.simpMode and 'main_simple' or 'main')
         end
