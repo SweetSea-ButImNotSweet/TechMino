@@ -9,6 +9,7 @@ local ms,kb,tc=love.mouse,love.keyboard,love.touch
 
 local max,min=math.max,math.min
 local floor,abs=math.floor,math.abs
+local sin=math.sin
 
 local mapCam={
     sel=false,-- Selected mode ID
@@ -32,7 +33,7 @@ function scene.enter()
     grid=false
     BG.set()
     mapCam.zoomK=SCN.prev=='main' and 5 or 1
-    visibleModes={}-- 1=unlocked, 2=locked but visible
+    visibleModes={}-- 1=unlocked, 2=locked but close to a unlocked mode
     for name,M in next,MODES do
         if RANKS[name] and M.x then
             visibleModes[name]=1
@@ -260,7 +261,7 @@ function scene.draw()
     gc_setLineWidth(8)
     gc_setColor(1,1,1,.2)
     for name,M in next,MODES do
-        if R[name] and M.unlock and M.x then
+        if M.unlock and M.x then
             for _=1,#M.unlock do
                 local m=MODES[M.unlock[_]]
                 gc_line(M.x,M.y,m.x,m.y)
@@ -273,36 +274,43 @@ function scene.draw()
     gc_setLineWidth(4)
     for name,M in next,MODES do
         local unlocked=visibleModes[name]
-        if unlocked then
-            local rank=R[name]
-            local S=M.size
+        local rank=R[name]
+        local S=M.size
 
-            -- Draw shapes on map
-            if unlocked==1 then
-                gc_setColor(baseRankColor[rank])
-                _drawModeShape(M,S,'fill')
-            end
-            gc_setColor(1,1,sel==name and 0 or 1,unlocked==1 and .8 or .3)
-            _drawModeShape(M,S,'line')
+        -- Draw shapes on map
+        if unlocked==1 then
+            gc_setColor(baseRankColor[rank])
+            _drawModeShape(M,S,'fill')
+        end
+        gc_setColor(
+            1,1,sel==name and 0 or 1,
+            unlocked==1 and .8 or unlocked==2 and sin(TIME()*4)*.35+.65 or .3
+        )
+        _drawModeShape(M,S,'line')
 
-            -- Icon
-            local icon=M.icon
-            if icon then
-                gc_setColor(unlocked==1 and COLOR.lH or COLOR.dH)
-                local length=icon:getWidth()*.5
-                gc_draw(icon,M.x,M.y,nil,S/length,nil,length,length)
-            end
+        -- Icon
+        local icon=M.icon
+        if icon then
+            gc_setColor(unlocked and COLOR.lH or COLOR.dH)
+            local length=icon:getWidth()*.5
+            gc_draw(icon,M.x,M.y,nil,S/length,nil,length,length)
+        end
 
-            -- Rank
-            if unlocked==1 then
-                name=RANK_CHARS[rank]
-                if name then
-                    gc_setColor(COLOR.dX)
-                    GC.mStr(name,M.x+M.size*.7,M.y-50-M.size*.7)
-                    gc_setColor(RANK_COLORS[rank])
-                    GC.mStr(name,M.x+M.size*.7+4,M.y-50-M.size*.7-4)
-                end
+        -- Rank
+        if unlocked==1 then
+            name=RANK_CHARS[rank]
+            if name then
+                gc_setColor(COLOR.dX)
+                GC.mStr(name,M.x+M.size*.7,M.y-50-M.size*.7)
+                gc_setColor(RANK_COLORS[rank])
+                GC.mStr(name,M.x+M.size*.7+4,M.y-50-M.size*.7-4)
             end
+        -- Lock
+        elseif M.size then
+            gc_setColor(COLOR.dX)
+            gc_draw(IMG.lock,M.x-32+M.size*.7,M.y-20-M.size*.7,0,2)
+            gc_setColor(unlocked==2 and COLOR.lH or COLOR.dH)
+            gc_draw(IMG.lock,M.x-26+M.size*.7,M.y-26-M.size*.7,0,2)
         end
     end
     gc_pop()
