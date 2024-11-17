@@ -1039,6 +1039,79 @@ local None_plus={
     kickTable=TABLE.new(noKickSet_180,29)
 }
 
+local finesseRS={
+    centerTex=defaultCenterTex,
+    centerPos=TABLE.copy(defaultCenterPos)
+}
+do
+    local ins=table.insert
+    local fmod=math.fmod
+    local floor,ceil=math.floor,math.ceil
+    local min,max=math.min,math.max
+    ---@param d number 1 - right, 2 - 180, 3 - left
+    local function global_kick_function(P,d)
+        if P.gameEnv.easyFresh then
+            P:freshBlockDelay()
+        end
+
+        local x,y=P.curX,P.curY
+        local C=P.cur
+        local Cid=C.id
+        -- local CBkL=BLOCKS[C.id]
+
+        -- Get simulated direction
+        local simulatedDir=C.dir+(d==3 and -1 or d==2 and 2 or 1)
+        if     simulatedDir<0 then simulatedDir=simulatedDir+4
+        elseif simulatedDir>3 then simulatedDir=simulatedDir-4 end
+
+        -- for y: -1 go down, +1 go up
+
+        -- Build test list based on direction
+        local test_list={}
+        if     d==1 then --CW
+            TABLE.complete({{ 1,0},{-1,0},{ 2,0}},test_list)
+        elseif d==3 then --CCW
+            TABLE.complete({{-1,0},{ 1,0},{-2,0}},test_list)
+        elseif d==2 then --180
+            if     simulatedDir==1 then TABLE.complete({{ 1, 0},{-1, 0},{ 1,-1},{-1,-1},{ 1, 1},{-1, 1}},test_list)
+            elseif simulatedDir==3 then TABLE.complete({{-1, 0},{ 1, 0},{-1,-1},{ 1,-1},{-1, 1},{ 1, 1}},test_list) end
+        end
+
+        local CBk=BLOCKS[Cid][simulatedDir]  ---Block shapes
+        local defaultCenterY=#CBk*0.5-defaultCenterPos[Cid][simulatedDir][1]
+        local furthestKickUpY=fmod(defaultCenterY,1)~=0 and floor(defaultCenterY) or max(defaultCenterY-1,0)
+        local furthestKickDownY=max(fmod(defaultCenterY,1)~=0 and #CBk-1-furthestKickUpY or #CBk-furthestKickUpY,0)
+        --[[
+            We only want to kick up to N blocks in up and down directions where N is how many blocks above/below the rotation center
+            but we don't count the block under the rotation center, ie: block S, Z, L and J and T
+        ]]
+        do
+            local kickUpDownTests={}
+            for _y= 1, furthestKickUpY      do ins(kickUpDownTests,{0,_y}) end
+            for _y=-1,-furthestKickDownY,-1 do ins(kickUpDownTests,{0,_y}) end
+
+            TABLE.complete(kickUpDownTests,test_list)
+        end
+
+        -- At this time, we finish the test list, now this is the time to test every kicks
+        for _,kick in pairs(test_list) do
+            local testX,testY=x+kick[1],y+kick[2]
+            if not P:solid(testX,testY) then
+                C.dir=simulatedDir
+                P.curX,P.curY=testX,testY
+                P:freshMoveBlock()
+
+                if P.sound then
+                    SFX.play('rotate',nil,P:getCenterX()*.15)
+                end
+                return
+            end
+        end
+    end
+
+    finesseRS.kickTable=TABLE.new(global_kick_function,29)
+end
+
 local RSlist={
     TRS=TRS,
     SRS=SRS,
@@ -1057,6 +1130,7 @@ local RSlist={
     Classic_plus=Classic_plus,
     None=None,
     None_plus=None_plus,
+    finesseRS=finesseRS,
 }
 
 for name,rs in next,RSlist do
