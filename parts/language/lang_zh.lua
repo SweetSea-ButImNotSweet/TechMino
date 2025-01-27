@@ -481,6 +481,7 @@ return {
             visible="能见度",
             freshLimit="锁延刷新限制",
 
+            sequence="序列模式",
             fieldH="场地高度",
             bufferLimit="缓冲上限",
             heightLimit="高度上限",
@@ -578,7 +579,7 @@ return {
             bg_on="普通背景",
             bg_off="关闭背景",
             bg_custom="应用自定义背景",
-            -- bg_custom_base64="Paste image as BG\n(PNG/JPG in Base64)",
+            bg_custom_base64="从剪切板导入图片\n(Base64编码的PNG/JPG)",
             defaultBG="默认背景",
             resetDbg="改回默认",
             lockBG="锁定背景",
@@ -1140,6 +1141,11 @@ return {
         "要盯着bug不放",
         "这打块，多是一件美事",
         "做，做碌鸠啊做，打块先啦！",
+        "你能做到。",
+        "自定义模式偶遇2效机器人，拼尽全力无法战胜",
+        "不紧不慢不快不慢地起楼",
+        "你起的楼顶上尖尖的",
+        "啊我操SRS怎么这么坏",
         {C.Z,"1，2，",C.C,"⑨",C.Z,"！！！！！"},
         {C.C,"<PURE ",C.P,"MEMORY>"},
         {C.H,"暂定段位:9"},
@@ -1163,6 +1169,8 @@ return {
         {C.R,"DD",C.Z,"炮=",C.P,"TS",C.R,"D",C.Z,"+",C.P,"TS",C.R,"D",C.Z,"炮"},
         {C.R,"DT",C.Z,"炮=",C.P,"TS",C.R,"D",C.Z,"+",C.P,"TS",C.R,"T",C.Z,"炮"},
         {C.R,"LrL ",C.G,"RlR ",C.B,"LLr ",C.O,"RRl ",C.P,"RRR LLL ",C.C,"FFF ",C.Y,"RfR RRf rFF"},
+        {C.O,"穿",C.lB,"梭",C.Z,"之力量"},
+        {C.lP,"Extraordinary!"},
 
         -- 时间碎片
         "时间碎片[000] 2021/11/21加入这个版块",

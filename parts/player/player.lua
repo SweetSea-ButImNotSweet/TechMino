@@ -266,7 +266,7 @@ function Player:act_moveRight(auto)
         self.moving=0
     end
 end
-function Player:act_rotRight()
+function Player:act_rotRight(ifpre)
     if not self.control then return end
     if self.cur then
         self.ctrlCount=self.ctrlCount+1
@@ -278,7 +278,7 @@ function Player:act_rotRight()
             self:resolveIRS()
             self.keyPressing[3]=true
         end
-        self:spin(1)
+        self:spin(1,ifpre)
         self:_triggerEvent('hook_rotate',1)
 
         -- Disable held inputs if IRS is off
@@ -287,7 +287,7 @@ function Player:act_rotRight()
         end
     end
 end
-function Player:act_rotLeft()
+function Player:act_rotLeft(ifpre)
     if not self.control then return end
     if self.cur then
         self.ctrlCount=self.ctrlCount+1
@@ -299,7 +299,7 @@ function Player:act_rotLeft()
             self:resolveIRS()
             self.keyPressing[4]=true
         end
-        self:spin(3)
+        self:spin(3,ifpre)
         self:_triggerEvent('hook_rotate',3)
         -- Disable held inputs if IRS is off
         if not self.gameEnv.irs then
@@ -307,7 +307,7 @@ function Player:act_rotLeft()
         end
     end
 end
-function Player:act_rot180()
+function Player:act_rot180(ifpre)
     if not self.control then return end
     if self.cur then
         self.ctrlCount=self.ctrlCount+2
@@ -319,7 +319,7 @@ function Player:act_rot180()
             self:resolveIRS()
             self.keyPressing[5]=true
         end
-        self:spin(2)
+        self:spin(2,ifpre)
         self:_triggerEvent('hook_rotate',2)
         -- Disable held inputs if IRS is off
         if not self.gameEnv.irs then
@@ -909,12 +909,45 @@ function Player:ifoverlap(bk,x,y)
     end
 end
 function Player:attack(R,send,time,line)
-    self:extraEvent('attack',R.sid,send,time,line)
+    local sid=R.sid
+    -- Add the attack to the list of in-transit attacks.
+    -- These attacks will be able to cancel with incoming attacks that cross them.
+    if not self.inTransitAttacks then
+        self.inTransitAttacks={}
+    end
+    if not self.inTransitAttacks[sid] then
+        self.inTransitAttacks[sid]={seenAttacks=0}
+    end
+    table.insert(self.inTransitAttacks[sid], {send=send, time=time, line=line})
+    -- Send the attack
+    -- We also send the number of seen attacks from this player.
+    -- This allows that player to know which attacks are still in transit, and which have already arrived.
+    -- This is because... if a player already saw an attack before sending this one, the attacks did not cross.
+    -- But if they didn't see the attack, then the attacks must have crossed (and should cancel each other)
+    self:extraEvent('attack',sid,send,time,line,self.inTransitAttacks[sid].seenAttacks)
 end
-function Player:beAttacked(P2,sid,send,time,line)
-    if self==P2 or self.sid~=sid then return end
-    self:receive(P2,send,time,line)
-    P2:createBeam(self,send)
+function Player:beAttacked(source,target_sid,send,time,line,seenCount)
+    -- Only recieve the attack if you are the target.
+    if self==source or self.sid~=target_sid then return end
+
+    if not self.inTransitAttacks then
+        self.inTransitAttacks={}
+    end
+    if not self.inTransitAttacks[source.sid] then
+        self.inTransitAttacks[source.sid]={seenAttacks=0}
+    end
+    -- Increment the number of seen attacks from that player.
+    self.inTransitAttacks[source.sid].seenAttacks=self.inTransitAttacks[source.sid].seenAttacks + 1
+    -- Block against any in-transit attacks before recieving (this prevents passhtrough)
+    for i=seenCount+1,#self.inTransitAttacks[source.sid] do
+        local atk=self.inTransitAttacks[source.sid][i]
+        local cancel=MATH.min(atk.send, send)
+        atk.send=atk.send-cancel
+        send=send-cancel
+    end
+
+    self:receive(source,send,time,line)
+    source:createBeam(self,send)
 end
 function Player:receive(A,send,time,line)
     self.lastRecv=A
@@ -1246,16 +1279,12 @@ function Player:resetBlock()-- Reset Block's position and execute I*S
         self.bufferedDelay=ENV.irscut
     else
         -- If we're currently dying or in an entry-delay mode (20g), perform the rotation right away.
-        if pressing[5] then
-            self:act_rot180()
+        if pressing[5] or pressing[3] and pressing[4] then
+            self:act_rot180(true)
         elseif pressing[3] then
-            if pressing[4] then
-                self:act_rot180()
-            else
-                self:act_rotRight()
-            end
+            self:act_rotRight(true)
         elseif pressing[4] then
-            self:act_rotLeft()
+            self:act_rotLeft(true)
         end
     end
     -- Disable held inputs if IRS is off
@@ -1308,9 +1337,7 @@ function Player:spin(d,ifpre)
 
                 -- Fresh ghost and freshTime
                 local t=self.freshTime
-                if not ifpre then
-                    self:freshMoveBlock()
-                end
+                self:freshMoveBlock()
                 if kickData[test][2]>0 and self.freshTime==t and self.curY~=self.imgY then
                     self.freshTime=self.freshTime-1
                 end
@@ -2456,7 +2483,15 @@ local function _updateMisc(P,dt)
     -- Push up garbages
     local y=P.fieldBeneath
     if y>0 then
-        P.fieldBeneath=max(y-P.gameEnv.pushSpeed,0)
+        local newFieldBeneath=max(y-P.gameEnv.pushSpeed,0)
+
+        P.fieldBeneath=newFieldBeneath
+        -- If pushing up garbage will block IHS, then resolve IHS early
+        if P.bufferedIHS and P:willDieWith(P.holdQueue[1]) then
+            P.fieldBeneath=y
+            P:resolveIRS(P.fieldBeneath)
+            P.fieldBeneath=newFieldBeneath
+        end
     end
 
     -- Move camera
@@ -2556,23 +2591,23 @@ local function _updateFX(P,dt)
 end
 
 function Player:resolveIRS()
-    if self.bufferedIHS then
+    local pressing=self.keyPressing
+    if self.bufferedIHS and pressing[8] then
         self:hold(true)
-        self.bufferedIHS=false
     end
+    self.bufferedIHS=false
 
     self.bufferedIRS=false
-    local pressing=self.keyPressing
     if pressing[5] then
-        self:act_rot180()
+        self:act_rot180(true)
     elseif pressing[3] then
         if pressing[4] then
-            self:act_rot180()
+            self:act_rot180(true)
         else
-            self:act_rotRight()
+            self:act_rotRight(true)
         end
     elseif pressing[4] then
-        self:act_rotLeft()
+        self:act_rotLeft(true)
     end
 end
 
@@ -2630,6 +2665,18 @@ local function update_alive(P,dt)
                 if L[i]>0 then
                     L[i]=L[i]-1
                 end
+            end
+        end
+    end
+
+    -- Buffer IRS after IRS cut delay has elapsed.
+    -- The purpose of this is to allow the player to release their rotate key during the IRS cut delay,
+    -- which will allow them to avoid accidentally using IRS.
+    if P.bufferedDelay then
+        P.bufferedDelay=P.bufferedDelay-1
+        if P.bufferedDelay<=0 then
+            if P.bufferedIRS then
+                P:resolveIRS()
             end
         end
     end
